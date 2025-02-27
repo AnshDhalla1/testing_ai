@@ -32,11 +32,6 @@ joblib==1.4.2
 json5==0.10.0
 jsonschema==4.23.0
 jsonschema-specifications==2024.10.1
-llama-cloud==0.1.11
-llama-cloud-services==0.6.1
-llama-extract==0.1.1
-llama-index-core==0.12.19
-llama-index-readers-file==0.4.5
 lxml==5.3.1
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
