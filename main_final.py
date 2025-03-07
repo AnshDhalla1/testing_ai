@@ -1,5 +1,3 @@
-# main.py
-
 import os
 import json
 import time
@@ -7,10 +5,10 @@ import tiktoken
 from dotenv import load_dotenv
 from openai import OpenAI
 from utils.jp_schema import ResumeSchema
-from knowledge.parse_pdf import extract_text_and_tables
+from knowledge.pdf_docling import extract_text_and_tables
 from knowledge.parse_excel import extract_excel_to_markdown
 from knowledge.parsedoc import extract_text_from_doc
-from prompt_test.test2 import RESUME_EXTRACTION_PROMPT
+from prompt.test3 import RESUME_EXTRACTION_PROMPT
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -29,7 +27,7 @@ def call_openai(prompt):
     print("🔮 Calling OpenAI's API...")
     client = OpenAI(api_key=OPENAI_API_KEY)
     completion = client.beta.chat.completions.parse(
-        temperature=0.1,
+        temperature=0,
         model="gpt-4o-2024-08-06",
         messages=[
             {"role": "user", "content": prompt}
@@ -54,7 +52,6 @@ def parse_file(file_path):
     elif file_extension == ".doc":
         return extract_text_from_doc(file_path)
     elif file_extension == ".docx":
-        # if needed, treat .docx same as .doc or adapt
         return extract_text_from_doc(file_path)
     elif file_extension == ".xlsx":
         return extract_excel_to_markdown(file_path)
@@ -73,7 +70,6 @@ def run_parse_and_infer(file_path: str, output_file: str):
     time_stats = {}
     total_start = time.time()
 
-    # 1) Parse the file
     parse_start = time.time()
     parsed_data = parse_file(file_path)
     time_stats["pdf_parse_time"] = time.time() - parse_start
@@ -84,19 +80,14 @@ def run_parse_and_infer(file_path: str, output_file: str):
         f.write(str(parsed_data))  
         print(f"⛳️ Extraction saved to {parsed_data_file}")
 
-    # 2) Create prompt
     prompt = f"{RESUME_EXTRACTION_PROMPT}\n\n{parsed_data}"
-
-    # 3) Call OpenAI
     inference_start = time.time()
     llm_output = call_openai(prompt)
     time_stats["total_inference_time"] = time.time() - inference_start
-    # 4) Save JSON output
     parsed_json = json.loads(llm_output)
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(parsed_json.get("parsed"), f, ensure_ascii=False, indent=4)
     print(f"✅ Final output saved to {output_file}")
-
 
     time_stats["total_time"] = time.time() - total_start
     print(f"⏱️ Total Inference Time: {time_stats['total_inference_time']:.2f}s")
