@@ -14,7 +14,7 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
 # Set up your Google Drive API credentials and service
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+SCOPES = ['https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = 'utils/smooth-era-454310-u3-cf7f0826e2e1.json'  
 
 credentials = service_account.Credentials.from_service_account_file(
