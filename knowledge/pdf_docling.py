@@ -9,5 +9,5 @@ def extract_text_and_tables(pdf_path):
     return parsed_data
 
 
-# path = "/Users/Apple/Desktop/Givery/testing_ai/data/JP resume format 001.pdf"
+# path = "/Users/Apple/Desktop/Givery/testing_ai/knowledge/Copy of 14893_20240722120940-37357ed226651667.pdf"
 # text = extract_text_and_tables(path)

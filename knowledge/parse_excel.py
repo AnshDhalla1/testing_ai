@@ -11,7 +11,7 @@ def extract_excel_to_markdown(file_path):
     return markdown_text
 
 
-# file_path = '/Users/Apple/Documents/Givery/data/JP resume format 011.xlsx'  # Replace with your file path
+# file_path = '/Users/Apple/Desktop/Givery/testing_ai/knowledge/Copy of FA-20240327.xlsx'  # Replace with your file path
 
 # # Call the function and print the output
 # markdown_output = extract_excel_to_markdown(file_path)

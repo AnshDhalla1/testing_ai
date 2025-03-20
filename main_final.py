@@ -22,7 +22,7 @@ MONGODB_URI = os.getenv("MONGODB_URI")
 # MongoDB Connection
 client = MongoClient(
         MONGODB_URI, 
-        tlsCAFile=certifi.where(),  # <-- Provide certifi’s CA bundle
+        tlsCAFile=certifi.where(), 
         serverSelectionTimeoutMS=5000
     )
 db = client["resume_db"]

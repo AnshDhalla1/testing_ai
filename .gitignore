@@ -2,3 +2,9 @@ myenv
 .env
 test_app.py
 version1_app.py
+quickstart.py
+giveryai-b5a77b4d7d86.json
+utils/scheduler.py
+utils/google_drive_utils.py
+utils/export.py
+utils/client_secret_294760733311-asr16ve496dhm3kdv1fmdqa7q9mi8iqd.apps.googleusercontent.com.json
