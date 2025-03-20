@@ -15,7 +15,7 @@ from google.oauth2 import service_account
 
 # Set up your Google Drive API credentials and service
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-SERVICE_ACCOUNT_FILE = '/utils/smooth-era-454310-u3-cf7f0826e2e1.json'  
+SERVICE_ACCOUNT_FILE = 'utils/smooth-era-454310-u3-cf7f0826e2e1.json'  
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
