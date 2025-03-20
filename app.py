@@ -9,30 +9,6 @@ from main_final import process_resume
 from utils.retrieve_doc import get_all_documents
 from utils.export_excel import export_to_excel
 
-# ----- Google Drive API Helper Functions -----
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
-
-# Set up your Google Drive API credentials and service
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-SERVICE_ACCOUNT_FILE = 'utils/giveryai-454310-50ca3611a54d.json' 
-
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-drive_service = build('drive', 'v3', credentials=credentials)
-
-def list_drive_files(folder_id):
-    query = f"'{folder_id}' in parents and trashed = false"
-    results = drive_service.files().list(q=query, fields="files(id, name, modifiedTime)").execute()
-    return results.get('files', [])
-
-def download_drive_file(file_id, file_name):
-    request = drive_service.files().get_media(fileId=file_id)
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_name)[1])
-    with open(temp_file.name, 'wb') as f:
-        f.write(request.execute())
-    return temp_file.name
-# ----- End Google Drive Helpers -----
 
 def convert_to_dataframe(parsed_json):
     if isinstance(parsed_json, list):
@@ -189,61 +165,6 @@ def run_app():
 
         else:
             st.write("保存済みの結果がありません。")
-
-
-    # --- Tab 3: Google Drive Resumes ---
-    with tab3:
-        st.header("Google Drive Resumes")
-        folder_id = st.text_input("Google Drive Folder ID", "1hCurZKwbn8OXm3fdD4n0I376kB3iPNsx")
-        
-        if folder_id:
-            drive_files = list_drive_files(folder_id)
-            if drive_files:
-                drive_df = pd.DataFrame(drive_files)
-                drive_df.rename(columns={
-                    "name": "File Name", 
-                    "id": "File ID", 
-                    "modifiedTime": "Modified Time"
-                }, inplace=True)
-                st.dataframe(drive_df)
-                
-                options = [f"{f['name']}||{f['id']}" for f in drive_files]
-                selected_files = st.multiselect("Select files to process", options)
-                
-                if selected_files:
-                    if st.button("Process Selected Files"):
-                        for sel in selected_files:
-                            file_name, file_id = sel.split("||")
-                            with st.expander(f"### 処理中: **{file_name}**"):    
-                                with st.spinner(f"Downloading {file_name} from Google Drive..."):
-                                    temp_file_path = download_drive_file(file_id, file_name)
-                                
-                                with st.spinner(f"{file_name} の処理中..."):
-                                    result_dict = process_with_retry(temp_file_path, file_name)
-                                
-                                if result_dict:
-                                    llm_output = result_dict["llm_output"]
-                                    time_stats = result_dict["time_stats"]
-                                    unique_id = result_dict["unique_id"]
-                                    inserted_id = result_dict["inserted_id"]
-                                    
-                                    st.subheader(f"### LLM 出力: **{file_name}**")
-                                    try:
-                                        loaded_json = json.loads(llm_output)
-                                        if "parsed" in loaded_json:
-                                            parsed_json = loaded_json["parsed"]
-                                            display_llm_output(parsed_json, time_stats, inserted_id, unique_id)
-                                            st.markdown("---")
-                                        else:
-                                            st.error("期待される 'parsed' キーがLLM出力に見つかりませんでした。")
-                                    except json.JSONDecodeError:
-                                        st.error("JSONの解析に失敗しました。下記に生データを表示します:")
-                                        st.text_area("LLM 出力 (生データ)", llm_output, height=300)
-                                else:
-                                    st.error(f"Could not process {file_name} after multiple retries.")
-            else:
-                st.write("No files found in the specified folder.") 
-
 
 if __name__ == "__main__":
     run_app()
