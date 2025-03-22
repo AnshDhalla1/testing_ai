@@ -1,7 +1,6 @@
 import os
 import json
 import time
-import tiktoken
 import certifi
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -12,8 +11,8 @@ from datetime import datetime, timezone
 from utils.jp_schema import ResumeSchema
 from knowledge.pdf_docling import extract_text_and_tables
 from knowledge.parse_excel import extract_excel_to_markdown
-from knowledge.parsedoc import extract_text_from_doc
-from prompt.test3 import RESUME_EXTRACTION_PROMPT
+from knowledge.parsedoc import extract_text_docx_file, extract_text_from_doc
+from prompt.test1 import RESUME_EXTRACTION_PROMPT
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -22,7 +21,7 @@ MONGODB_URI = os.getenv("MONGODB_URI")
 # MongoDB Connection
 client = MongoClient(
         MONGODB_URI, 
-        tlsCAFile=certifi.where(), 
+        tlsCAFile=certifi.where(),  
         serverSelectionTimeoutMS=5000
     )
 db = client["resume_db"]
@@ -45,10 +44,10 @@ def parse_file(file_path):
     file_extension = os.path.splitext(file_path)[1].lower()
     if file_extension == ".pdf":
         return extract_text_and_tables(file_path)
-    elif file_extension == ".doc":
+    elif file_extension in [".doc"]:
         return extract_text_from_doc(file_path)
-    elif file_extension == ".docx":
-        return extract_text_from_doc(file_path)
+    elif file_extension in [".docx"]:
+        return extract_text_docx_file(file_path)
     elif file_extension == ".xlsx":
         return extract_excel_to_markdown(file_path)
     else:
@@ -56,14 +55,15 @@ def parse_file(file_path):
 
 #Calling OpenAI API (ChatCompletions)
 @log_time
-def call_openai(prompt):
+def call_openai(prompt, parsed_data):
     print("🔮 Calling OpenAI's API...")
     client = OpenAI(api_key=OPENAI_API_KEY)
     completion = client.beta.chat.completions.parse(
-        temperature=0,
+        temperature=0.65,
         model="gpt-4o-2024-08-06",
         messages=[
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": str(prompt)},
+            {"role": "user", "content": str(parsed_data)}
         ],
         response_format=ResumeSchema,
     )
@@ -94,10 +94,11 @@ def run_parse_and_infer(file_path: str, output_file: str):
     time_stats["pdf_parse_time"] = time.time() - parse_start
     print(f"📄 File Parsing Time: {time_stats['pdf_parse_time']:.2f}s")
 
-    prompt = f"{RESUME_EXTRACTION_PROMPT}\n\n{parsed_data}"
+    prompt = RESUME_EXTRACTION_PROMPT
+    #print(f"🔍 Parsed data {parsed_data}")
 
     inference_start = time.time()
-    llm_output = call_openai(prompt)
+    llm_output = call_openai(prompt, parsed_data)
     time_stats["total_inference_time"] = time.time() - inference_start
 
     parsed_json = json.loads(llm_output)
@@ -149,17 +150,13 @@ def process_resume(file_path, original_filename):
       4) Saving output to local file
       5) Storing in Mongo
     """
-    # 1) Unique output file
     unique_id = generate_unique_id(file_path)
     output_file = f"final_output_{unique_id}.json"
 
-    # 2) Run the pipeline
     time_stats, parsed_data, llm_output = run_parse_and_infer(file_path, output_file)
 
-    # 3) Store in DB
     inserted_id = store_in_mongo(unique_id, original_filename, parsed_data, llm_output, time_stats)
 
-    # Return for possible UI usage
     return {
         "inserted_id": inserted_id,
         "unique_id": unique_id,
@@ -174,8 +171,10 @@ def main():
     This is the CLI entry point. 
     Hard-coded example usage for local debugging.
     """
-    file_path = "/Users/Apple/Documents/Givery/data/JP resume format 001.pdf"
+    file_path = "/Users/Apple/Desktop/Givery BP/Givery-Resume-Parsing/data/JP resume format 021.docx"
     result_info = process_resume(file_path, "JP resume format 001.pdf")
+
+    print (result_info)
 
 if __name__ == "__main__":
     main()
