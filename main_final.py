@@ -59,7 +59,7 @@ def call_openai(prompt, parsed_data):
     print("🔮 Calling OpenAI's API...")
     client = OpenAI(api_key=OPENAI_API_KEY)
     completion = client.beta.chat.completions.parse(
-        temperature=0.65,
+        temperature=0.35,
         model="gpt-4o-2024-08-06",
         messages=[
             {"role": "system", "content": str(prompt)},
